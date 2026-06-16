@@ -1,11 +1,27 @@
 'use client'
 
-import { useState } from 'react'
+import { type FormEvent, useState } from 'react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { Loader2, Lock, Shield } from 'lucide-react'
+import { ArrowRight, Loader2, Lock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input, Label, FormError } from '@/components/ui/input'
+import { Input, Label } from '@/components/ui/input'
 import { Alert } from '@/components/ui/alert'
+
+function FloraMark() {
+  return (
+    <div className="flex justify-center">
+      <Image
+        src="/images/flora-group-logo.png"
+        alt="Flora Group W.L.L."
+        width={280}
+        height={84}
+        priority
+        className="max-h-24 w-auto object-contain"
+      />
+    </div>
+  )
+}
 
 export default function LoginPage() {
   const router = useRouter()
@@ -14,7 +30,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  async function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault()
     setError(null)
     setLoading(true)
@@ -39,93 +55,99 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="grid min-h-screen lg:grid-cols-2">
-      {/* Brand panel */}
-      <div className="relative hidden flex-col justify-between overflow-hidden bg-brand p-12 text-white lg:flex">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--color-gold)_0%,_transparent_50%)] opacity-20" />
-        <div className="absolute -end-24 -top-24 size-96 rounded-full bg-gold/10 blur-3xl" />
-        <div className="absolute -bottom-32 -start-32 size-80 rounded-full bg-white/5 blur-2xl" />
+    <main className="relative flex min-h-screen flex-col overflow-hidden bg-[#f8f3ec] px-4 py-8 text-foreground sm:px-6 lg:px-8">
+      <div className="absolute inset-0 bg-[linear-gradient(115deg,#fffaf4_0%,#f8f3ec_42%,#f3e9df_100%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgb(74_14_23_/_0.055)_1px,transparent_1px),linear-gradient(to_bottom,rgb(74_14_23_/_0.055)_1px,transparent_1px)] [background-size:72px_72px] [mask-image:radial-gradient(ellipse_at_center,black_0%,transparent_72%)]" />
+      <div className="absolute left-[10%] top-[12%] h-72 w-72 rounded-full bg-gold/20 blur-[90px]" />
+      <div className="absolute bottom-[8%] right-[12%] h-80 w-80 rounded-full bg-brand/12 blur-[110px]" />
+      <div className="absolute left-1/2 top-1/2 h-[32rem] w-[32rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/50" />
 
-        <div className="relative">
-          <span className="grid size-12 place-items-center rounded-xl bg-white/15 text-lg font-bold backdrop-blur-sm">
-            F
-          </span>
+      <section className="relative mx-auto flex w-full max-w-[440px] flex-1 flex-col items-center justify-center">
+        <div className="mb-10 w-full">
+          <FloraMark />
         </div>
 
-        <div className="relative space-y-6">
-          <h1 className="text-4xl font-semibold leading-tight tracking-tight">
-            Manage your website
-            <br />
-            <span className="text-gold">with confidence.</span>
-          </h1>
-          <p className="max-w-md text-base leading-relaxed text-white/70">
-            Update content, customize your brand, and manage job postings — all from one
-            centralized admin portal.
-          </p>
-          <div className="flex items-center gap-3 text-sm text-white/60">
-            <Shield className="size-4" />
-            Secure admin access for Flora Group
-          </div>
-        </div>
+        <div className="relative w-full">
+            <div className="absolute -inset-8 rounded-[3rem] bg-[radial-gradient(circle_at_50%_0%,rgb(255_255_255_/_0.82),transparent_58%)] blur-2xl" />
+            <div className="relative overflow-hidden rounded-[2rem] border border-white/75 bg-white/58 p-px shadow-[0_30px_90px_-45px_rgb(74_14_23_/_0.55)] backdrop-blur-2xl">
+              <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
+              <div className="relative rounded-[calc(2rem-1px)] bg-white/72 px-6 py-7 sm:px-8 sm:py-8">
+                <div className="mb-8">
+                  <h2 className="text-3xl font-semibold tracking-[-0.04em] text-foreground">
+                    Welcome back
+                  </h2>
+                  <p className="mt-2 text-sm leading-6 text-muted">
+                    Sign in to continue managing the Flora CMS.
+                  </p>
+                </div>
 
-        <p className="relative text-xs text-white/40">© Flora Group. All rights reserved.</p>
-      </div>
+                <form onSubmit={onSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="username" className="text-xs uppercase tracking-[0.18em] text-muted">
+                      Username
+                    </Label>
+                    <Input
+                      id="username"
+                      type="text"
+                      autoComplete="username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      placeholder="Enter your username"
+                      className="h-12 rounded-2xl border-border-strong bg-white px-4 shadow-sm placeholder:text-subtle focus:border-brand focus:bg-white focus:ring-brand/20"
+                      required
+                    />
+                  </div>
 
-      {/* Form panel */}
-      <div className="flex items-center justify-center bg-surface-sunken p-6 sm:p-12">
-        <div className="w-full max-w-[400px]">
-          <div className="mb-8 lg:hidden">
-            <span className="grid size-10 place-items-center rounded-xl bg-brand text-sm font-bold text-white">
-              F
-            </span>
-          </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password" className="text-xs uppercase tracking-[0.18em] text-muted">
+                      Password
+                    </Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      autoComplete="current-password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter your password"
+                      className="h-12 rounded-2xl border-border-strong bg-white px-4 shadow-sm placeholder:text-subtle focus:border-brand focus:bg-white focus:ring-brand/20"
+                      required
+                    />
+                  </div>
 
-          <div className="mb-8">
-            <h2 className="text-2xl font-semibold tracking-tight text-foreground">Welcome back</h2>
-            <p className="mt-1.5 text-sm text-muted">Sign in to the Flora CMS admin portal.</p>
-          </div>
+                  {error && (
+                    <Alert variant="danger" className="rounded-2xl">
+                      <Lock className="mt-0.5 size-4 shrink-0" />
+                      {error}
+                    </Alert>
+                  )}
 
-          <form onSubmit={onSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                type="text"
-                autoComplete="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your username"
-                required
-              />
+                  <Button
+                    type="submit"
+                    className="mt-2 h-12 w-full rounded-2xl shadow-[0_16px_34px_-20px_rgb(74_14_23_/_0.75)]"
+                    size="lg"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin" />
+                        Signing in
+                      </>
+                    ) : (
+                      <>
+                        Sign in
+                        <ArrowRight className="size-4" />
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </div>
             </div>
+          </div>
+      </section>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                required
-              />
-            </div>
-
-            {error && (
-              <Alert variant="danger">
-                <Lock className="mt-0.5 size-4 shrink-0" />
-                {error}
-              </Alert>
-            )}
-
-            <Button type="submit" className="w-full" size="lg" disabled={loading}>
-              {loading && <Loader2 className="size-4 animate-spin" />}
-              {loading ? 'Signing in…' : 'Sign in'}
-            </Button>
-          </form>
-        </div>
-      </div>
+      <p className="relative mt-8 w-full text-center text-xs text-subtle">
+        © Flora Group. All rights reserved.
+      </p>
     </main>
   )
 }

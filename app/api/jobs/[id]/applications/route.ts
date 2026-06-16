@@ -12,9 +12,11 @@ export async function GET(request: Request, { params }: Params) {
   const { searchParams } = new URL(request.url)
   const page = Number(searchParams.get('page') ?? '1')
   const pageSize = Number(searchParams.get('pageSize') ?? '20')
+  const search = searchParams.get('search') ?? undefined
+  const status = searchParams.get('status') ?? undefined
 
   try {
-    const data = await listJobApplications(token, id, page, pageSize)
+    const data = await listJobApplications(token, id, { page, pageSize, search, status })
     return NextResponse.json(data)
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to load applications'

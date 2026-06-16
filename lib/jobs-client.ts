@@ -1,6 +1,6 @@
 import 'server-only'
 import { env } from '@/lib/config'
-import { CmsError } from '@/lib/cms-client'
+import { CmsError, cmsFetch } from '@/lib/cms-client'
 import type {
   AdminJobListItem,
   Application,
@@ -17,7 +17,7 @@ async function adminFetch<T>(
   path: string,
   init?: RequestInit,
 ): Promise<T> {
-  const res = await fetch(`${env.apiUrl}${path}`, {
+  const res = await cmsFetch(`${env.apiUrl}${path}`, {
     ...init,
     headers: {
       Authorization: `Bearer ${token}`,
@@ -37,12 +37,23 @@ async function adminFetch<T>(
   return (await res.json()) as T
 }
 
+export interface AdminJobListParams {
+  page?: number
+  pageSize?: number
+  search?: string
+  status?: JobStatus
+}
+
 export async function listAdminJobs(
   token: string,
-  page = 1,
-  pageSize = 20,
+  params: AdminJobListParams = {},
 ): Promise<PaginatedResponse<AdminJobListItem>> {
-  return adminFetch(token, `/api/admin/jobs?page=${page}&pageSize=${pageSize}`)
+  const query = new URLSearchParams()
+  query.set('page', String(params.page ?? 1))
+  query.set('pageSize', String(params.pageSize ?? 20))
+  if (params.search?.trim()) query.set('search', params.search.trim())
+  if (params.status) query.set('status', params.status)
+  return adminFetch(token, `/api/admin/jobs?${query.toString()}`)
 }
 
 export async function getAdminJob(token: string, id: string): Promise<JobDetail> {
@@ -85,16 +96,24 @@ export async function updateJobStatus(
   })
 }
 
+export interface ApplicationListParams {
+  page?: number
+  pageSize?: number
+  search?: string
+  status?: string
+}
+
 export async function listJobApplications(
   token: string,
   jobId: string,
-  page = 1,
-  pageSize = 20,
+  params: ApplicationListParams = {},
 ): Promise<PaginatedResponse<Application>> {
-  return adminFetch(
-    token,
-    `/api/admin/jobs/${jobId}/applications?page=${page}&pageSize=${pageSize}`,
-  )
+  const query = new URLSearchParams()
+  query.set('page', String(params.page ?? 1))
+  query.set('pageSize', String(params.pageSize ?? 20))
+  if (params.search?.trim()) query.set('search', params.search.trim())
+  if (params.status) query.set('status', params.status)
+  return adminFetch(token, `/api/admin/jobs/${jobId}/applications?${query.toString()}`)
 }
 
 export async function updateApplicationStatus(

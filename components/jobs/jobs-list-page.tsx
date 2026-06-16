@@ -1,15 +1,21 @@
 'use client'
 
 import Link from 'next/link'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Archive, Briefcase, Loader2, Plus, Search, Users } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
+import { Archive, Briefcase, Edit2, EyeOff, Loader2, MoreHorizontal, Plus, Search, Send, Users } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { PageHeader } from '@/components/page-header'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { JobStatusBadge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ConfirmDialog } from '@/components/ui/dialog'
+import { DropdownMenu, DropdownMenuItem, DropdownMenuLink, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { EmptyState } from '@/components/ui/alert'
 import { Input } from '@/components/ui/input'
 import {
@@ -28,8 +34,15 @@ import {
   type PaginatedResponse,
 } from '@/lib/jobs/types'
 
-async function fetchJobs(page: number): Promise<PaginatedResponse<AdminJobListItem>> {
-  const res = await fetch(`/api/jobs?page=${page}`)
+async function fetchJobs(params: {
+  page: number
+  search: string
+  status: JobStatus | 'ALL'
+}): Promise<PaginatedResponse<AdminJobListItem>> {
+  const query = new URLSearchParams({ page: String(params.page) })
+  if (params.search.trim()) query.set('search', params.search.trim())
+  if (params.status !== 'ALL') query.set('status', params.status)
+  const res = await fetch(`/api/jobs?${query.toString()}`)
   if (!res.ok) throw new Error('Failed to load jobs')
   return res.json()
 }
@@ -49,13 +62,27 @@ type ConfirmAction = { id: string; title: string; status: JobStatus; label: stri
 export function JobsListPage() {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<JobStatus | 'ALL'>('ALL')
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null)
+  const [openMenu, setOpenMenu] = useState<string | null>(null)
   const queryClient = useQueryClient()
 
+  // Debounce the search box so we hit the API at most ~3×/sec while typing.
+  useEffect(() => {
+    const handle = setTimeout(() => setDebouncedSearch(search), 300)
+    return () => clearTimeout(handle)
+  }, [search])
+
+  // Any filter change resets back to the first page of the new result set.
+  useEffect(() => {
+    setPage(1)
+  }, [debouncedSearch, statusFilter])
+
   const query = useQuery({
-    queryKey: ['admin-jobs', page],
-    queryFn: () => fetchJobs(page),
+    queryKey: ['admin-jobs', { page, search: debouncedSearch, status: statusFilter }],
+    queryFn: () => fetchJobs({ page, search: debouncedSearch, status: statusFilter }),
+    placeholderData: keepPreviousData,
   })
 
   const statusMutation = useMutation({
@@ -66,18 +93,8 @@ export function JobsListPage() {
     },
   })
 
-  const filtered = useMemo(() => {
-    if (!query.data) return []
-    return query.data.items.filter((job) => {
-      const matchesSearch =
-        !search ||
-        job.title.toLowerCase().includes(search.toLowerCase()) ||
-        job.department.toLowerCase().includes(search.toLowerCase()) ||
-        job.company.name.toLowerCase().includes(search.toLowerCase())
-      const matchesStatus = statusFilter === 'ALL' || job.status === statusFilter
-      return matchesSearch && matchesStatus
-    })
-  }, [query.data, search, statusFilter])
+  // The server already applied search/status, so render the page as-is.
+  const jobs = query.data?.items ?? []
 
   const stats = useMemo(() => {
     if (!query.data) return null
@@ -160,7 +177,7 @@ export function JobsListPage() {
             <Alert variant="danger">Failed to load jobs. Please refresh the page.</Alert>
           )}
 
-          {query.data && filtered.length === 0 && (
+          {query.data && jobs.length === 0 && (
             <EmptyState
               icon={Briefcase}
               title={search || statusFilter !== 'ALL' ? 'No matching jobs' : 'No job postings yet'}
@@ -183,7 +200,7 @@ export function JobsListPage() {
             />
           )}
 
-          {query.data && filtered.length > 0 && (
+          {query.data && jobs.length > 0 && (
             <>
               <Table>
                 <TableHeader>
@@ -197,7 +214,7 @@ export function JobsListPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.map((job) => (
+                  {jobs.map((job) => (
                     <TableRow key={job.id}>
                       <TableCell>
                         <div className="font-medium">{job.title}</div>
@@ -220,46 +237,93 @@ export function JobsListPage() {
                         </Link>
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-1.5">
-                          <Link href={`/dashboard/jobs/${job.id}/edit`}>
-                            <Button variant="outline" size="sm">
-                              Edit
+                        <DropdownMenu
+                          open={openMenu === job.id}
+                          onOpenChange={(open) => setOpenMenu(open ? job.id : null)}
+                          trigger={
+                            <Button variant="ghost" size="icon">
+                              {statusMutation.isPending && statusMutation.variables?.id === job.id ? (
+                                <Loader2 className="size-4 animate-spin" />
+                              ) : (
+                                <MoreHorizontal className="size-4" />
+                              )}
                             </Button>
-                          </Link>
+                          }
+                        >
+                          <DropdownMenuLink
+                            href={`/dashboard/jobs/${job.id}/edit`}
+                            className="gap-2"
+                            onClick={() => setOpenMenu(null)}
+                          >
+                            <Edit2 className="size-3.5 shrink-0 text-muted" />
+                            Edit posting
+                          </DropdownMenuLink>
+                          <DropdownMenuLink
+                            href={`/dashboard/jobs/${job.id}/applications`}
+                            className="gap-2"
+                            onClick={() => setOpenMenu(null)}
+                          >
+                            <Users className="size-3.5 shrink-0 text-muted" />
+                            View applications
+                          </DropdownMenuLink>
                           {job.status !== 'PUBLISHED' && (
-                            <Button
-                              size="sm"
+                            <DropdownMenuItem
+                              className="gap-2"
                               disabled={statusMutation.isPending}
-                              onClick={() =>
+                              onClick={() => {
+                                setOpenMenu(null)
                                 setConfirmAction({
                                   id: job.id,
                                   title: job.title,
                                   status: 'PUBLISHED',
                                   label: 'Publish',
                                 })
-                              }
+                              }}
                             >
+                              <Send className="size-3.5 shrink-0 text-muted" />
                               Publish
-                            </Button>
+                            </DropdownMenuItem>
+                          )}
+                          {job.status !== 'DRAFT' && (
+                            <DropdownMenuItem
+                              className="gap-2"
+                              disabled={statusMutation.isPending}
+                              onClick={() => {
+                                setOpenMenu(null)
+                                setConfirmAction({
+                                  id: job.id,
+                                  title: job.title,
+                                  status: 'DRAFT',
+                                  label: 'Unpublish',
+                                })
+                              }}
+                            >
+                              <EyeOff className="size-3.5 shrink-0 text-muted" />
+                              Move to draft
+                            </DropdownMenuItem>
                           )}
                           {job.status !== 'ARCHIVED' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
+                            <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="gap-2 text-danger hover:bg-danger-bg"
                               disabled={statusMutation.isPending}
-                              onClick={() =>
+                              onClick={() => {
+                                setOpenMenu(null)
                                 setConfirmAction({
                                   id: job.id,
                                   title: job.title,
                                   status: 'ARCHIVED',
                                   label: 'Archive',
                                 })
-                              }
+                              }}
                             >
-                              <Archive className="size-3.5" />
-                            </Button>
+                              <Archive className="size-3.5 shrink-0" />
+                              Archive
+                            </DropdownMenuItem>
+                            </>
                           )}
-                        </div>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -292,12 +356,6 @@ export function JobsListPage() {
             </>
           )}
 
-          {statusMutation.isPending && (
-            <div className="mt-3 flex items-center gap-2 text-sm text-muted">
-              <Loader2 className="size-4 animate-spin" />
-              Updating status…
-            </div>
-          )}
         </CardContent>
       </Card>
 
@@ -308,7 +366,9 @@ export function JobsListPage() {
         description={
           confirmAction?.status === 'PUBLISHED'
             ? `"${confirmAction?.title}" will become visible on the public careers page.`
-            : `"${confirmAction?.title}" will be hidden from the careers page.`
+            : confirmAction?.status === 'DRAFT'
+              ? `"${confirmAction?.title}" will be moved back to draft and hidden from the careers page.`
+              : `"${confirmAction?.title}" will be archived and hidden from the careers page.`
         }
         confirmLabel={confirmAction?.label ?? 'Confirm'}
         variant={confirmAction?.status === 'ARCHIVED' ? 'destructive' : 'default'}

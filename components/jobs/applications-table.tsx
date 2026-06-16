@@ -1,14 +1,15 @@
 'use client'
 
 import Link from 'next/link'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ExternalLink, Inbox, Loader2, MoreHorizontal } from 'lucide-react'
-import { useState } from 'react'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { ExternalLink, Inbox, Loader2, MoreHorizontal, Search } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { Alert, EmptyState } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { ApplicationStatusBadge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { DropdownMenu, DropdownMenuItem } from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
 import {
   Table,
   TableBody,
@@ -28,9 +29,12 @@ import {
 
 async function fetchApplications(
   jobId: string,
-  page: number,
+  params: { page: number; search: string; status: ApplicationStatus | 'ALL' },
 ): Promise<PaginatedResponse<Application>> {
-  const res = await fetch(`/api/jobs/${jobId}/applications?page=${page}`)
+  const query = new URLSearchParams({ page: String(params.page) })
+  if (params.search.trim()) query.set('search', params.search.trim())
+  if (params.status !== 'ALL') query.set('status', params.status)
+  const res = await fetch(`/api/jobs/${jobId}/applications?${query.toString()}`)
   if (!res.ok) throw new Error('Failed to load applications')
   return res.json()
 }
@@ -47,12 +51,25 @@ async function patchApplicationStatus(id: string, status: ApplicationStatus) {
 
 export function ApplicationsTable({ jobId, jobTitle }: { jobId: string; jobTitle: string }) {
   const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<ApplicationStatus | 'ALL'>('ALL')
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const queryClient = useQueryClient()
 
+  useEffect(() => {
+    const handle = setTimeout(() => setDebouncedSearch(search), 300)
+    return () => clearTimeout(handle)
+  }, [search])
+
+  useEffect(() => {
+    setPage(1)
+  }, [debouncedSearch, statusFilter])
+
   const query = useQuery({
-    queryKey: ['applications', jobId, page],
-    queryFn: () => fetchApplications(jobId, page),
+    queryKey: ['applications', jobId, { page, search: debouncedSearch, status: statusFilter }],
+    queryFn: () => fetchApplications(jobId, { page, search: debouncedSearch, status: statusFilter }),
+    placeholderData: keepPreviousData,
   })
 
   const mutation = useMutation({
@@ -65,16 +82,43 @@ export function ApplicationsTable({ jobId, jobTitle }: { jobId: string; jobTitle
   })
 
   const apiBase = process.env.NEXT_PUBLIC_FLORA_API_URL ?? 'http://localhost:5253'
+  const isFiltered = debouncedSearch.trim() !== '' || statusFilter !== 'ALL'
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Applications</CardTitle>
-        <CardDescription>
-          Candidates who applied for{' '}
-          <span className="font-medium text-foreground">{jobTitle}</span>
-        </CardDescription>
+      <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <CardTitle>Applications</CardTitle>
+          <CardDescription>
+            Candidates who applied for{' '}
+            <span className="font-medium text-foreground">{jobTitle}</span>
+          </CardDescription>
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="relative">
+            <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-subtle" />
+            <Input
+              placeholder="Search candidates…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="ps-9 sm:w-52"
+            />
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as ApplicationStatus | 'ALL')}
+            className="h-10 rounded-lg border border-border bg-surface px-3 text-sm shadow-sm"
+          >
+            <option value="ALL">All statuses</option>
+            {APPLICATION_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {formatEnumLabel(s)}
+              </option>
+            ))}
+          </select>
+        </div>
       </CardHeader>
+
       <CardContent>
         {query.isLoading && <TableSkeleton rows={5} />}
 
@@ -85,8 +129,12 @@ export function ApplicationsTable({ jobId, jobTitle }: { jobId: string; jobTitle
         {query.data && query.data.items.length === 0 && (
           <EmptyState
             icon={Inbox}
-            title="No applications yet"
-            description="When candidates apply for this role, their details will appear here."
+            title={isFiltered ? 'No matching applications' : 'No applications yet'}
+            description={
+              isFiltered
+                ? 'Try adjusting your search or filter.'
+                : 'When candidates apply for this role, their details will appear here.'
+            }
           />
         )}
 

@@ -9,6 +9,7 @@ import {
   type UiConfigPayload,
 } from '@/lib/types'
 import { cn } from '@/lib/utils'
+import { buildMapEmbedSrc } from '@/lib/maps'
 import { Card, Field, TextArea, TextInput } from '../editor/inputs'
 
 /** Groups CONTENT_SCHEMA entries by their `page` label for section headers. */
@@ -90,23 +91,55 @@ export function ContentSection({
           return (
             <Card key={`${entry.group}-${idx}`} title={entry.label}>
               <div className="space-y-3">
-                {entry.fields.map((field) => (
-                  <Field key={field.key} label={field.label}>
-                    {field.multiline ? (
-                      <TextArea
-                        dir={dir}
-                        value={groupValues[field.key] ?? ''}
-                        onChange={(v) => setContent(locale, entry.group, field.key, v)}
-                      />
-                    ) : (
-                      <TextInput
-                        dir={dir}
-                        value={groupValues[field.key] ?? ''}
-                        onChange={(v) => setContent(locale, entry.group, field.key, v)}
-                      />
-                    )}
-                  </Field>
-                ))}
+                {entry.fields.map((field) => {
+                  const isMapLocation = entry.group === 'contact' && field.key === 'mapLocation'
+                  const mapPreviewSrc = isMapLocation
+                    ? buildMapEmbedSrc(groupValues[field.key])
+                    : null
+                  return (
+                    <Field key={field.key} label={field.label} hint={field.hint}>
+                      {field.multiline ? (
+                        <TextArea
+                          dir={dir}
+                          value={groupValues[field.key] ?? ''}
+                          onChange={(v) => setContent(locale, entry.group, field.key, v)}
+                        />
+                      ) : (
+                        <TextInput
+                          dir={dir}
+                          value={groupValues[field.key] ?? ''}
+                          onChange={(v) => setContent(locale, entry.group, field.key, v)}
+                        />
+                      )}
+
+                      {isMapLocation && (
+                        <div className="mt-2.5">
+                          {mapPreviewSrc ? (
+                            <div className="overflow-hidden rounded-lg border border-border">
+                              <iframe
+                                key={mapPreviewSrc}
+                                title="Map preview"
+                                src={mapPreviewSrc}
+                                width="100%"
+                                height="220"
+                                loading="lazy"
+                                referrerPolicy="no-referrer-when-downgrade"
+                                className="block w-full"
+                              />
+                              <p className="bg-surface-sunken px-3 py-1.5 text-xs text-subtle">
+                                Live preview — confirm the pin is correct before saving.
+                              </p>
+                            </div>
+                          ) : (
+                            <p className="rounded-lg border border-dashed border-border bg-surface-sunken px-3 py-4 text-center text-xs text-subtle">
+                              Enter a Maps link, address, or coordinates to preview the map.
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </Field>
+                  )
+                })}
               </div>
             </Card>
           )

@@ -6,7 +6,7 @@ import { ImageOff } from 'lucide-react'
 import type { Locale, Theme, UiConfigPayload } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
-type SectionId = 'appearance' | 'content' | 'media' | 'branding' | 'layout'
+type SectionId = 'appearance' | 'content' | 'media' | 'branding' | 'email' | 'social' | 'layout' | 'subsidiaries'
 
 const PUBLIC_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
@@ -209,6 +209,13 @@ function ContentPreview({
             <p className="mt-1.5 text-[10px]" style={{ color: 'var(--foreground)' }}>
               📍 {c.footer.address || 'Office address'}
             </p>
+            {(c.footer.phoneDisplay || c.footer.email) && (
+              <p className="mt-1 text-[9px]" style={{ color: 'var(--muted-foreground)' }}>
+                {c.footer.phoneDisplay && <span>{c.footer.phoneDisplay}</span>}
+                {c.footer.phoneDisplay && c.footer.email && ' · '}
+                {c.footer.email && <span>{c.footer.email}</span>}
+              </p>
+            )}
             <p className="mt-1 text-[9px]" style={{ color: 'var(--muted-foreground)' }}>
               {c.footer.newsletter || 'Newsletter prompt'}
             </p>
@@ -216,7 +223,7 @@ function ContentPreview({
           {/* Bottom bar */}
           <div className="border-t px-4 py-2" style={{ background: 'var(--maroon)', borderColor: 'var(--border)' }}>
             <p className="text-[9px] opacity-70" style={{ color: 'var(--primary-foreground)' }}>
-              {c.footer.tagline || '© Flora Group'}
+              © {new Date().getFullYear()} {c.footer.companyName || 'Flora Group'}. {c.footer.rightsText || 'All rights reserved.'}
             </p>
           </div>
         </>
@@ -237,16 +244,22 @@ function ContentPreview({
                 <p className="text-[10px] font-medium" style={{ color: 'var(--card-foreground)' }}>
                   {c.contact.headOfficeName || 'Head Office'}
                 </p>
+                <p className="mt-0.5 text-[9px] line-clamp-2" style={{ color: 'var(--muted-foreground)' }}>
+                  {c.contact.headOfficeAddress || 'Address'}
+                </p>
                 <p className="mt-0.5 text-[9px]" style={{ color: 'var(--muted-foreground)' }}>
-                  {c.contact.hoursDays} · {c.contact.hoursTime}
+                  {c.contact.headOfficePhone || c.contact.headOfficeEmail || `${c.contact.hoursDays} · ${c.contact.hoursTime}`}
                 </p>
               </div>
               <div className="rounded-[var(--radius)] border p-2" style={{ borderColor: 'var(--border)', background: 'var(--card)' }}>
                 <p className="text-[10px] font-medium" style={{ color: 'var(--card-foreground)' }}>
                   {c.contact.flowersOfficeName || 'Flowers Office'}
                 </p>
+                <p className="mt-0.5 text-[9px] line-clamp-2" style={{ color: 'var(--muted-foreground)' }}>
+                  {c.contact.flowersOfficeAddress || 'Address'}
+                </p>
                 <p className="mt-0.5 text-[9px]" style={{ color: 'var(--muted-foreground)' }}>
-                  {c.contact.hoursDays} · {c.contact.hoursTime}
+                  {c.contact.flowersOfficePhone || c.contact.flowersOfficeEmail || `${c.contact.hoursDays} · ${c.contact.hoursTime}`}
                 </p>
               </div>
             </div>
@@ -324,43 +337,137 @@ function ContentPreview({
 
 function MediaPreview({ payload }: { payload: UiConfigPayload }) {
   const vars = themeVars(payload.theme)
+  const subsidiaries = payload.subsidiaries?.items ?? []
+
+  return (
+    <div className="space-y-3">
+      <div style={vars} className="overflow-hidden rounded-[var(--radius)] border">
+        {/* Nav bar */}
+        <div className="flex items-center gap-3 px-4 py-3" style={{ background: 'var(--maroon-deep)' }}>
+          <Img
+            src={payload.images.logo}
+            alt="logo"
+            className="h-7 max-w-[80px] object-contain"
+            dark
+          />
+          <div className="ml-auto flex gap-3">
+            {['Home', 'About', 'Careers'].map((label) => (
+              <span key={label} className="text-[9px] font-medium opacity-60" style={{ color: 'var(--primary-foreground)' }}>
+                {label}
+              </span>
+            ))}
+          </div>
+        </div>
+        {/* Hero image with overlay */}
+        <div className="relative h-36 overflow-hidden" style={{ background: 'var(--muted)' }}>
+          <Img
+            src={payload.images.heroImage}
+            alt="hero"
+            className="h-full w-full object-cover"
+          />
+          <div
+            className="absolute inset-0"
+            style={{ background: 'linear-gradient(to right, var(--maroon-deep) 0%, transparent 60%)' }}
+          />
+          <div className="absolute inset-0 flex items-center px-4">
+            <div className="space-y-1.5">
+              <div className="h-2 w-16 rounded-full opacity-60" style={{ background: 'var(--gold)' }} />
+              <div className="h-3 w-28 rounded opacity-90" style={{ background: 'var(--primary-foreground)' }} />
+              <div className="h-2 w-20 rounded opacity-50" style={{ background: 'var(--primary-foreground)' }} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {subsidiaries.length > 0 && (
+        <div className="grid grid-cols-3 gap-2">
+          {subsidiaries.slice(0, 3).map((sub) => (
+            <div key={sub.slug} className="overflow-hidden rounded-lg border border-neutral-200">
+              <Img
+                src={sub.image ?? ''}
+                alt={sub.name.en || sub.slug}
+                className="h-14 w-full object-cover"
+              />
+              <p className="truncate px-2 py-1 text-[9px] font-medium text-neutral-600">
+                {sub.name.en || sub.slug}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Email ───────────────────────────────────────────────────────────────────
+
+function EmailPreview({ payload, locale }: { payload: UiConfigPayload; locale: Locale }) {
+  const contact = payload.content[locale].contact
+  const footer = payload.content[locale].footer
+
+  return (
+    <div className="overflow-hidden rounded-[var(--radius)] border text-[11px]">
+      <div className="px-4 py-4" style={{ background: 'var(--maroon)', color: 'var(--primary-foreground)' }}>
+        <p className="text-[10px] font-medium uppercase tracking-wider opacity-70">Contact delivery</p>
+        <p className="mt-2 font-mono text-sm">
+          {contact.formRecipientEmail || '— not set —'}
+        </p>
+        <p className="mt-1 text-[9px] opacity-65">Form submissions → this inbox (server-side)</p>
+      </div>
+      <div className="border-t px-4 py-3" style={{ borderColor: 'var(--border)', background: 'var(--background)' }}>
+        <p className="text-[10px] font-medium" style={{ color: 'var(--foreground)' }}>Footer display</p>
+        <p className="mt-1 font-mono text-[10px]" style={{ color: 'var(--muted-foreground)' }}>
+          {footer.email || '—'}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// ─── Social ──────────────────────────────────────────────────────────────────
+
+const SOCIAL_LABELS: Record<string, string> = {
+  linkedin: 'LinkedIn',
+  instagram: 'Instagram',
+  facebook: 'Facebook',
+  x: 'X',
+  youtube: 'YouTube',
+}
+
+function SocialPreview({ payload }: { payload: UiConfigPayload }) {
+  const social = payload.social
+  const vars = themeVars(payload.theme)
+
+  if (!social?.enabled) {
+    return (
+      <div className="rounded-lg border border-border bg-surface-sunken p-4 text-sm text-muted">
+        Social links disabled — footer icons hidden on the public site.
+      </div>
+    )
+  }
+
+  const links = (social.links ?? []).filter((l) => l.url?.trim())
 
   return (
     <div style={vars} className="overflow-hidden rounded-[var(--radius)] border">
-      {/* Nav bar */}
-      <div className="flex items-center gap-3 px-4 py-3" style={{ background: 'var(--maroon-deep)' }}>
-        <Img
-          src={payload.images.logo}
-          alt="logo"
-          className="h-7 max-w-[80px] object-contain"
-          dark
-        />
-        <div className="ml-auto flex gap-3">
-          {['Home', 'About', 'Careers'].map((label) => (
-            <span key={label} className="text-[9px] font-medium opacity-60" style={{ color: 'var(--primary-foreground)' }}>
-              {label}
-            </span>
-          ))}
-        </div>
-      </div>
-      {/* Hero image with overlay */}
-      <div className="relative h-36 overflow-hidden" style={{ background: 'var(--muted)' }}>
-        <Img
-          src={payload.images.heroImage}
-          alt="hero"
-          className="h-full w-full object-cover"
-        />
-        <div
-          className="absolute inset-0"
-          style={{ background: 'linear-gradient(to right, var(--maroon-deep) 0%, transparent 60%)' }}
-        />
-        <div className="absolute inset-0 flex items-center px-4">
-          <div className="space-y-1.5">
-            <div className="h-2 w-16 rounded-full opacity-60" style={{ background: 'var(--gold)' }} />
-            <div className="h-3 w-28 rounded opacity-90" style={{ background: 'var(--primary-foreground)' }} />
-            <div className="h-2 w-20 rounded opacity-50" style={{ background: 'var(--primary-foreground)' }} />
+      <div className="px-4 py-4" style={{ background: 'var(--maroon)', color: 'var(--primary-foreground)' }}>
+        <p className="text-[10px] font-medium uppercase tracking-wider opacity-70">Footer social</p>
+        {links.length === 0 ? (
+          <p className="mt-2 text-[11px] opacity-75">Enabled but no links yet.</p>
+        ) : (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {links.map((link, i) => (
+              <span
+                key={`${link.platform}-${i}`}
+                className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px]"
+                style={{ borderColor: 'var(--gold)', color: 'var(--gold)' }}
+              >
+                <span className="size-1.5 rounded-full" style={{ background: 'var(--gold)' }} />
+                {SOCIAL_LABELS[link.platform] ?? link.platform}
+              </span>
+            ))}
           </div>
-        </div>
+        )}
       </div>
     </div>
   )
@@ -465,13 +572,60 @@ function LayoutPreview({ payload }: { payload: UiConfigPayload }) {
   )
 }
 
+// ─── Subsidiaries ────────────────────────────────────────────────────────────
+
+function SubsidiariesPreview({ payload }: { payload: UiConfigPayload }) {
+  const vars = themeVars(payload.theme)
+  const count = payload.subsidiaries?.items?.length ?? 0
+
+  return (
+    <div style={vars} className="overflow-hidden rounded-[var(--radius)] border">
+      <div className="px-4 py-5" style={{ background: 'var(--maroon-deep)', color: 'var(--primary-foreground)' }}>
+        <p className="text-[9px] uppercase tracking-widest font-medium" style={{ color: 'var(--gold)' }}>
+          Subsidiaries
+        </p>
+        <p className="mt-2 font-semibold">Company Profiles</p>
+        <p className="mt-1 text-[10px] opacity-75">
+          {payload.subsidiaries?.enabled ? `Showing ${count} companies` : 'Subsidiaries section disabled'}
+        </p>
+      </div>
+      {payload.subsidiaries?.items && payload.subsidiaries.items.length > 0 && (
+        <div className="border-t px-4 py-3" style={{ background: 'var(--background)', borderColor: 'var(--border)' }}>
+          <div className="grid grid-cols-3 gap-2">
+            {payload.subsidiaries.items.slice(0, 3).map((sub) => (
+              <div key={sub.slug} className="overflow-hidden rounded-md border border-neutral-200/60">
+                <Img
+                  src={sub.image ?? ''}
+                  alt={sub.name.en || sub.slug}
+                  className="h-12 w-full object-cover"
+                />
+                <p className="truncate px-1.5 py-1 text-[9px] font-medium" style={{ color: 'var(--foreground)' }}>
+                  {sub.name.en || sub.slug}
+                </p>
+              </div>
+            ))}
+          </div>
+          {count > 3 && (
+            <p className="mt-2 text-[9px]" style={{ color: 'var(--muted-foreground)' }}>
+              +{count - 3} more companies
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Preview hint copy ────────────────────────────────────────────────────────
 
 const HINTS: Record<SectionId, string> = {
   appearance: 'Uses the same CSS-variable mapping as the public site.',
   content: 'Reflects the active page tab and locale.',
-  media: 'Shows how your images appear on the live site.',
+  media: 'Site logo, hero, favicon, and subsidiary cover photos.',
   branding: 'Browser tab and social share card preview.',
+  email: 'Contact form recipient and public display addresses.',
+  social: 'Footer social icons when enabled.',
+  subsidiaries: 'Manage company profiles with bilingual content and images.',
   layout: 'Dimmed sections are hidden on the public site.',
 }
 
@@ -482,19 +636,23 @@ export function SectionPreview({
   payload,
   contentPage,
   contentLocale,
+  emailLocale,
 }: {
   active: SectionId
   payload: UiConfigPayload
   contentPage: string
   contentLocale: Locale
+  emailLocale?: Locale
 }) {
   return (
-    <aside className="lg:sticky lg:top-24 lg:self-start">
-      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">Live preview</p>
+    <aside>
       {active === 'appearance' && <AppearancePreview payload={payload} />}
       {active === 'content' && <ContentPreview payload={payload} activePage={contentPage} locale={contentLocale} />}
       {active === 'media' && <MediaPreview payload={payload} />}
       {active === 'branding' && <BrandingPreview payload={payload} />}
+      {active === 'email' && <EmailPreview payload={payload} locale={emailLocale ?? contentLocale} />}
+      {active === 'social' && <SocialPreview payload={payload} />}
+      {active === 'subsidiaries' && <SubsidiariesPreview payload={payload} />}
       {active === 'layout' && <LayoutPreview payload={payload} />}
       <p className="mt-3 text-xs text-neutral-400">{HINTS[active]}</p>
     </aside>

@@ -20,9 +20,9 @@ export function BrandingSection({
           <Field label="Meta description">
             <TextArea value={payload.branding.metaDescription} onChange={(v) => setBranding('metaDescription', v)} rows={2} />
           </Field>
-          <Field label="Favicon / icon URL" hint="Shown in the browser tab and as the bookmark icon.">
-            <TextInput mono value={payload.branding.logoUrl} onChange={(v) => setBranding('logoUrl', v)} />
-          </Field>
+          <p className="text-xs text-muted">
+            Favicon and site images are managed in the <span className="font-medium text-foreground">Media</span> tab.
+          </p>
         </div>
       </Card>
 

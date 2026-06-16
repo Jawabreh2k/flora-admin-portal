@@ -11,8 +11,28 @@ export class CmsError extends Error {
   }
 }
 
+function isConnectionError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false
+  const cause = err.cause as { code?: string } | undefined
+  return err.message === 'fetch failed' || cause?.code === 'ECONNREFUSED'
+}
+
+export async function cmsFetch(input: string, init?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(input, init)
+  } catch (err) {
+    if (isConnectionError(err)) {
+      throw new CmsError(
+        `Cannot reach the Flora CMS API at ${env.apiUrl}. Start flora-backend (dotnet run --project Flora.Cms.Api) or update FLORA_API_URL.`,
+        503,
+      )
+    }
+    throw err
+  }
+}
+
 export async function login(username: string, password: string): Promise<AuthResponse> {
-  const res = await fetch(`${env.apiUrl}/api/auth/login`, {
+  const res = await cmsFetch(`${env.apiUrl}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password }),
@@ -27,7 +47,7 @@ export async function login(username: string, password: string): Promise<AuthRes
 
 /** Reads the current config via the admin endpoint (requires a valid token). */
 export async function getAdminConfig(token: string): Promise<UiConfigResponse> {
-  const res = await fetch(`${env.apiUrl}/api/admin/ui/config`, {
+  const res = await cmsFetch(`${env.apiUrl}/api/admin/ui/config`, {
     headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
     cache: 'no-store',
   })
@@ -42,7 +62,7 @@ export async function updateAdminConfig(
   token: string,
   payload: UiConfigPayload,
 ): Promise<UiConfigResponse> {
-  const res = await fetch(`${env.apiUrl}/api/admin/ui/config`, {
+  const res = await cmsFetch(`${env.apiUrl}/api/admin/ui/config`, {
     method: 'PUT',
     headers: {
       Authorization: `Bearer ${token}`,

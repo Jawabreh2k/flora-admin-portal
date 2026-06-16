@@ -1,7 +1,7 @@
 'use client'
 
 import type { Sections, UiConfigPayload } from '@/lib/types'
-import { Card, Toggle } from '../editor/inputs'
+import { Card, Switch } from '../editor/inputs'
 
 const LABELS: Record<keyof Sections, { title: string; desc: string }> = {
   showStats: { title: 'Stats band', desc: 'The "Established / Verticals / Certified / Countries" strip.' },
@@ -21,11 +21,17 @@ export function LayoutSection({
       <div className="space-y-4">
         {(Object.keys(payload.sections) as (keyof Sections)[]).map((key) => (
           <div key={key} className="flex items-center justify-between gap-4 border-b border-neutral-100 pb-3 last:border-0 last:pb-0">
-            <div>
+            <div className="min-w-0 flex-1 pr-2">
               <p className="text-sm font-medium text-neutral-800">{LABELS[key].title}</p>
               <p className="text-xs text-neutral-500">{LABELS[key].desc}</p>
             </div>
-            <Toggle checked={payload.sections[key]} onChange={() => toggleSection(key)} label="" />
+            <div className="flex shrink-0 items-center">
+              <Switch
+                checked={payload.sections[key]}
+                onChange={() => toggleSection(key)}
+                aria-label={LABELS[key].title}
+              />
+            </div>
           </div>
         ))}
       </div>
