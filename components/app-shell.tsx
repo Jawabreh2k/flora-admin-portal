@@ -3,9 +3,11 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Briefcase,
   ExternalLink,
+  Inbox,
   LayoutGrid,
   LogOut,
   Menu,
@@ -31,6 +33,13 @@ const MAIN_NAV = [
     icon: Briefcase,
     match: (path: string) => path.startsWith('/dashboard/jobs'),
   },
+  {
+    href: '/dashboard/inquiries',
+    label: 'Inquiries',
+    description: 'Contact form messages',
+    icon: Inbox,
+    match: (path: string) => path.startsWith('/dashboard/inquiries'),
+  },
 ] as const
 
 function NavLink({
@@ -39,6 +48,7 @@ function NavLink({
   description,
   icon: Icon,
   active,
+  badge,
   onClick,
 }: {
   href: string
@@ -46,6 +56,7 @@ function NavLink({
   description: string
   icon: typeof LayoutGrid
   active: boolean
+  badge?: number
   onClick?: () => void
 }) {
   return (
@@ -78,6 +89,16 @@ function NavLink({
           {description}
         </span>
       </span>
+      {typeof badge === 'number' && badge > 0 && (
+        <span
+          className={cn(
+            'ml-auto inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums',
+            active ? 'bg-white/20 text-white' : 'bg-brand text-white',
+          )}
+        >
+          {badge > 99 ? '99+' : badge}
+        </span>
+      )}
     </Link>
   )
 }
@@ -85,6 +106,19 @@ function NavLink({
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname()
   const router = useRouter()
+
+  // Live unread-inquiry count for the nav badge. Shares its cache key with the
+  // inbox page, so triaging there updates the badge instantly (and vice versa).
+  const { data: inquirySummary } = useQuery({
+    queryKey: ['admin-inquiries-summary'],
+    queryFn: async () => {
+      const res = await fetch('/api/inquiries/summary')
+      if (!res.ok) throw new Error('Failed to load inquiry summary')
+      return res.json() as Promise<{ total: number; unread: number }>
+    },
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  })
 
   const logout = async () => {
     await fetch('/api/session', { method: 'DELETE' })
@@ -113,6 +147,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             key={item.href}
             {...item}
             active={item.match(pathname)}
+            badge={item.href === '/dashboard/inquiries' ? inquirySummary?.unread : undefined}
             onClick={onNavigate}
           />
         ))}

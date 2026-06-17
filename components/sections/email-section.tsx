@@ -1,9 +1,10 @@
 'use client'
 
-import { Info, Mail } from 'lucide-react'
+import { Mail } from 'lucide-react'
 import type { EditableContent, Locale, UiConfigPayload } from '@/lib/types'
 import { LOCALES, LOCALE_LABELS } from '@/lib/types'
 import { Card, Field, TextInput } from '../editor/inputs'
+import { EmailDeliveryCard } from './email-delivery-card'
 import { cn } from '@/lib/utils'
 
 type ContentSetter = (
@@ -84,24 +85,11 @@ export function EmailSection({
         </Field>
       </Card>
 
-      <div className="flex gap-3 rounded-xl border border-border bg-surface-sunken/60 px-4 py-3.5">
-        <Info className="mt-0.5 size-4 shrink-0 text-muted" />
-        <div className="text-sm text-muted">
-          <p className="font-medium text-foreground">Email delivery (server configuration)</p>
-          <p className="mt-1 leading-relaxed">
-            Resend API keys and SMTP credentials are configured by your hosting team in{' '}
-            <code className="rounded bg-surface px-1 py-0.5 text-xs">appsettings.json</code> or user
-            secrets — never stored in the CMS. If delivery fails, check{' '}
-            <code className="rounded bg-surface px-1 py-0.5 text-xs">Contact:ResendApiKey</code> or{' '}
-            <code className="rounded bg-surface px-1 py-0.5 text-xs">Contact:SmtpHost</code> on the API
-            server.
-          </p>
-        </div>
-      </div>
+      <EmailDeliveryCard />
 
       <div className="flex items-center gap-2 text-xs text-subtle">
         <Mail className="size-3.5" />
-        Save &amp; publish for changes to take effect on the public site.
+        Recipient &amp; display addresses save with the main Save button. Email delivery has its own Save above.
       </div>
     </div>
   )

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { AlertTriangle, Check, Loader2, RotateCcw, Save } from 'lucide-react'
+import { AlertTriangle, Check, History, Loader2, RotateCcw, Save } from 'lucide-react'
 import type {
   Branding,
   EditableContent,
@@ -32,6 +32,7 @@ import { SubsidiariesSection } from './sections/subsidiaries-section'
 import { SocialSection } from './sections/social-section'
 import { EmailSection } from './sections/email-section'
 import { SectionPreview } from './section-preview'
+import { RevisionHistoryDialog, type RestoreResult } from './revision-history-dialog'
 
 type SaveState =
   | { status: 'idle' }
@@ -48,6 +49,11 @@ export function ConfigEditor({ initial }: { initial: UiConfigResponse }) {
   const [contentLocale, setContentLocale] = useState<Locale>('en')
   const [emailLocale, setEmailLocale] = useState<Locale>('en')
   const [contentPage, setContentPage] = useState<string>(CONTENT_SCHEMA[0].page)
+  // Links Appearance colour fields ↔ the live preview (hover one, spotlight the other).
+  const [hoverToken, setHoverToken] = useState<keyof Theme | null>(null)
+  const [historyOpen, setHistoryOpen] = useState(false)
+  // Live revision number, kept current as the admin saves or restores.
+  const [revision, setRevision] = useState(initial.revision)
 
   const activeSection = getConfigSection(active)
 
@@ -62,6 +68,10 @@ export function ConfigEditor({ initial }: { initial: UiConfigResponse }) {
 
   const setTheme = (key: keyof Theme, value: string) => {
     setPayload((p) => ({ ...p, theme: { ...p.theme, [key]: value } }))
+    touched()
+  }
+  const applyTheme = (patch: Partial<Theme>) => {
+    setPayload((p) => ({ ...p, theme: { ...p.theme, ...patch } }))
     touched()
   }
   const setBranding = (key: keyof Branding, value: string) => {
@@ -126,10 +136,19 @@ export function ConfigEditor({ initial }: { initial: UiConfigResponse }) {
         return
       }
       setDirty(false)
+      setRevision(data.revision)
       setSave({ status: 'saved', revision: data.revision, revalidated: !!data.revalidated })
     } catch {
       setSave({ status: 'error', message: 'Network error.' })
     }
+  }
+
+  function onRestored(result: RestoreResult) {
+    setPayload(result.payload)
+    setDirty(false)
+    setRevision(result.revision)
+    setSave({ status: 'saved', revision: result.revision, revalidated: !!result.revalidated })
+    setHistoryOpen(false)
   }
 
   return (
@@ -146,7 +165,7 @@ export function ConfigEditor({ initial }: { initial: UiConfigResponse }) {
 
           <div className="flex flex-wrap items-center gap-2">
             <span className="hidden text-xs text-subtle sm:inline">
-              Rev {initial.revision}
+              Rev {revision}
             </span>
             {dirty && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-warning-bg px-2.5 py-1 text-xs font-medium text-warning">
@@ -154,6 +173,10 @@ export function ConfigEditor({ initial }: { initial: UiConfigResponse }) {
                 Unsaved
               </span>
             )}
+            <Button variant="outline" size="sm" onClick={() => setHistoryOpen(true)}>
+              <History className="size-3.5" />
+              History
+            </Button>
             <Button variant="outline" size="sm" onClick={reset} disabled={!dirty}>
               <RotateCcw className="size-3.5" />
               Reset
@@ -226,13 +249,27 @@ export function ConfigEditor({ initial }: { initial: UiConfigResponse }) {
         </div>
       )}
 
+      <RevisionHistoryDialog
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        onRestored={onRestored}
+      />
+
       {/* Workspace */}
       <div className="flex-1 bg-surface-sunken">
         <div className="grid gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[200px_minmax(0,1fr)] lg:px-8 lg:py-6 xl:grid-cols-[200px_minmax(0,1fr)_300px]">
           <ConfigSectionNav active={active} onChange={setActive} />
 
           <div className="min-w-0 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-6">
-            {active === 'appearance' && <AppearanceSection payload={payload} setTheme={setTheme} />}
+            {active === 'appearance' && (
+              <AppearanceSection
+                payload={payload}
+                setTheme={setTheme}
+                applyTheme={applyTheme}
+                activeToken={hoverToken}
+                onHoverToken={setHoverToken}
+              />
+            )}
             {active === 'content' && (
               <ContentSection
                 payload={payload}
@@ -275,9 +312,13 @@ export function ConfigEditor({ initial }: { initial: UiConfigResponse }) {
 
           <div className="hidden xl:block">
             <div className="sticky top-24 rounded-2xl border border-border bg-surface shadow-sm">
-              <p className="border-b border-border px-4 py-3 text-xs font-medium text-subtle">
-                Preview
-              </p>
+              <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+                <span className="relative flex size-2">
+                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-60" />
+                  <span className="relative inline-flex size-2 rounded-full bg-success" />
+                </span>
+                <p className="text-xs font-medium text-subtle">Live preview</p>
+              </div>
               <div className="p-4">
                 <SectionPreview
                   active={active}
@@ -285,6 +326,8 @@ export function ConfigEditor({ initial }: { initial: UiConfigResponse }) {
                   contentPage={contentPage}
                   contentLocale={contentLocale}
                   emailLocale={emailLocale}
+                  activeToken={hoverToken}
+                  onHoverToken={(k) => setHoverToken(k as keyof Theme | null)}
                 />
               </div>
             </div>

@@ -1,6 +1,6 @@
 import 'server-only'
 import { env } from './config'
-import type { AuthResponse, UiConfigPayload, UiConfigResponse } from './types'
+import type { AuthResponse, RevisionSummary, UiConfigPayload, UiConfigResponse } from './types'
 
 /** Thin server-side client for the Flora CMS .NET API. */
 
@@ -77,6 +77,39 @@ export async function updateAdminConfig(
   if (!res.ok) {
     const text = await res.text().catch(() => '')
     throw new CmsError(text || `Save failed (${res.status}).`, res.status)
+  }
+
+  return (await res.json()) as UiConfigResponse
+}
+
+/** Reads the recent config revision snapshots for the history / rollback view. */
+export async function getConfigHistory(token: string): Promise<RevisionSummary[]> {
+  const res = await cmsFetch(`${env.apiUrl}/api/admin/ui/config/history`, {
+    headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+    cache: 'no-store',
+  })
+
+  if (res.status === 401 || res.status === 403) throw new CmsError('Session expired.', 401)
+  if (!res.ok) throw new CmsError(`Failed to load history (${res.status}).`, res.status)
+
+  return (await res.json()) as RevisionSummary[]
+}
+
+/** Rolls the live config back to a previous revision (published as a new revision). */
+export async function restoreConfigRevision(
+  token: string,
+  revision: number,
+): Promise<UiConfigResponse> {
+  const res = await cmsFetch(`${env.apiUrl}/api/admin/ui/config/history/${revision}/restore`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+    cache: 'no-store',
+  })
+
+  if (res.status === 401 || res.status === 403) throw new CmsError('Session expired.', 401)
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new CmsError(text || `Restore failed (${res.status}).`, res.status)
   }
 
   return (await res.json()) as UiConfigResponse

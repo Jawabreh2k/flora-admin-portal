@@ -26,19 +26,24 @@ export function TextInput({
   mono,
   dir,
   placeholder,
+  type = 'text',
+  autoComplete,
 }: {
   value: string
   onChange: (v: string) => void
   mono?: boolean
   dir?: 'ltr' | 'rtl'
   placeholder?: string
+  type?: 'text' | 'password' | 'email' | 'number'
+  autoComplete?: string
 }) {
   return (
     <input
-      type="text"
+      type={type}
       value={value}
       dir={dir}
       placeholder={placeholder}
+      autoComplete={autoComplete}
       onChange={(e) => onChange(e.target.value)}
       spellCheck={false}
       className={cn(

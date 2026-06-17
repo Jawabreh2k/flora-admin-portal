@@ -1,10 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import type { CSSProperties } from 'react'
-import { ImageOff } from 'lucide-react'
+import type { CSSProperties, ReactNode } from 'react'
+import { ImageOff, MousePointerClick } from 'lucide-react'
 import type { Locale, Theme, UiConfigPayload } from '@/lib/types'
-import { cn } from '@/lib/utils'
+import { TOKEN_META, type ColorTokenKey } from '@/lib/theme-tokens'
+import { cn, humanizeKey } from '@/lib/utils'
+
+type TokenHover = (key: string | null) => void
 
 type SectionId = 'appearance' | 'content' | 'media' | 'branding' | 'email' | 'social' | 'layout' | 'subsidiaries'
 
@@ -64,49 +67,296 @@ function Img({ src, alt, className, dark }: { src: string; alt: string; classNam
 
 // ─── Appearance ──────────────────────────────────────────────────────────────
 
-function AppearancePreview({ payload }: { payload: UiConfigPayload }) {
+/**
+ * A block of the mini-site that demonstrates one or more theme tokens. When a
+ * token is "active" (hovered in the editor, or in this preview) every block that
+ * uses it lights up with a cyan outline while the rest dim — so it's obvious at a
+ * glance where a colour actually appears. Hovering a block reports its primary
+ * token back so the matching editor field highlights too.
+ */
+function Region({
+  tokens,
+  primary,
+  active,
+  onHover,
+  className,
+  style,
+  rounded,
+  pill = false,
+  children,
+}: {
+  tokens: string[]
+  primary?: string
+  active?: string | null
+  onHover?: TokenHover
+  className?: string
+  style?: CSSProperties
+  rounded?: string
+  pill?: boolean
+  children: ReactNode
+}) {
+  const on = !!active && tokens.includes(active)
+  const dim = !!active && !on
+  const pillLabel = on && active ? (TOKEN_META[active as ColorTokenKey]?.label ?? humanizeKey(active)) : ''
+
   return (
-    <div style={themeVars(payload.theme)} className="overflow-hidden rounded-[var(--radius)] border">
-      <div className="px-5 py-6" style={{ background: 'var(--maroon-deep)', color: 'var(--primary-foreground)' }}>
+    <div
+      onMouseEnter={() => onHover?.(primary ?? tokens[0])}
+      className={cn(
+        'relative transition-all duration-200',
+        rounded,
+        className,
+        dim && 'opacity-30 saturate-50',
+        on && 'z-10',
+      )}
+      style={style}
+    >
+      {children}
+      {on && (
         <span
-          className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-medium"
-          style={{ background: 'var(--gold)', color: 'var(--gold-foreground, #2a0d12)' }}
-        >
-          Qatari Conglomerate · Since 1993
+          aria-hidden
+          className={cn('pointer-events-none absolute inset-0', rounded)}
+          style={{ boxShadow: 'inset 0 0 0 2px #06b6d4, inset 0 0 0 3.5px rgba(255,255,255,.85)' }}
+        />
+      )}
+      {on && pill && (
+        <span className="pointer-events-none absolute left-1.5 top-1.5 z-20 rounded bg-cyan-500 px-1.5 py-0.5 text-[8px] font-semibold leading-none text-white shadow-sm">
+          {pillLabel}
         </span>
-        <h3 className="mt-3 text-lg font-semibold leading-tight">
-          A legacy of excellence,{' '}
-          <span style={{ color: 'var(--gold)' }}>redefining industries</span> across Qatar.
-        </h3>
-        <div className="mt-4 flex gap-2">
-          <span
-            className="rounded-[var(--radius)] px-3 py-1.5 text-xs font-medium"
-            style={{ background: 'var(--gold)', color: 'var(--gold-foreground, #2a0d12)' }}
-          >
-            Explore Subsidiaries
-          </span>
-          <span
-            className="rounded-[var(--radius)] border px-3 py-1.5 text-xs font-medium"
-            style={{ borderColor: 'var(--primary-foreground)', opacity: 0.85 }}
-          >
-            Corporate Profile
-          </span>
-        </div>
+      )}
+    </div>
+  )
+}
+
+function AppearancePreview({
+  payload,
+  activeToken,
+  onHoverToken,
+}: {
+  payload: UiConfigPayload
+  activeToken?: string | null
+  onHoverToken?: TokenHover
+}) {
+  const A = activeToken ?? null
+  const H: TokenHover = onHoverToken ?? (() => {})
+
+  return (
+    <div style={themeVars(payload.theme)}>
+      <div className="mb-2.5 flex items-center gap-1.5 text-[10px] font-medium text-neutral-400">
+        <MousePointerClick className="size-3" />
+        Hover a colour to spotlight it
       </div>
-      <div className="px-5 py-5" style={{ background: 'var(--background)', color: 'var(--foreground)' }}>
-        <div
-          className="rounded-[var(--radius)] border p-4"
-          style={{ background: 'var(--card)', color: 'var(--card-foreground)', borderColor: 'var(--border)' }}
-        >
-          <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>Strategic Verticals</p>
-          <p className="mt-1 text-2xl font-bold" style={{ color: 'var(--primary)' }}>6</p>
+
+      <div
+        onMouseLeave={() => H(null)}
+        className="overflow-hidden rounded-[var(--radius)] border shadow-sm"
+        style={{ borderColor: 'var(--border)' }}
+      >
+        {/* Browser chrome (decorative frame, not themed) */}
+        <div className="flex items-center gap-1.5 border-b px-3 py-2" style={{ background: '#f1efec', borderColor: 'var(--border)' }}>
+          <span className="size-2 rounded-full bg-neutral-300" />
+          <span className="size-2 rounded-full bg-neutral-300" />
+          <span className="size-2 rounded-full bg-neutral-300" />
+          <span className="ml-2 flex-1 rounded-full bg-white px-2 py-0.5 text-center text-[9px] text-neutral-400">
+            floragroup.qa
+          </span>
         </div>
-        <button
-          className="mt-4 w-full rounded-[var(--radius)] py-2 text-xs font-medium"
-          style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
+
+        {/* Top navigation */}
+        <Region
+          tokens={['maroonDeep', 'primaryForeground', 'gold']}
+          primary="maroonDeep"
+          active={A}
+          onHover={H}
+          pill
+          className="flex items-center gap-2 px-3.5 py-2.5"
+          style={{ background: 'var(--maroon-deep)' }}
         >
-          Get in Touch
-        </button>
+          <span className="size-2 shrink-0 rounded-full" style={{ background: 'var(--gold)' }} />
+          <span className="text-[10px] font-semibold tracking-wide" style={{ color: 'var(--primary-foreground)' }}>
+            FLORA GROUP
+          </span>
+          <span className="ml-auto flex gap-2.5 text-[8px] font-medium" style={{ color: 'var(--primary-foreground)' }}>
+            <span className="opacity-75">About</span>
+            <span className="opacity-75">Careers</span>
+            <span className="opacity-75">Contact</span>
+          </span>
+        </Region>
+
+        {/* Hero */}
+        <Region
+          tokens={['maroon', 'maroonDeep', 'primaryForeground', 'gold', 'goldForeground']}
+          primary="maroon"
+          active={A}
+          onHover={H}
+          pill
+          className="px-4 py-5"
+          style={{
+            background: 'linear-gradient(155deg, var(--maroon) 0%, var(--maroon-deep) 100%)',
+            color: 'var(--primary-foreground)',
+          }}
+        >
+          <span
+            className="inline-block rounded-full px-2 py-0.5 text-[8px] font-semibold"
+            style={{ background: 'var(--gold)', color: 'var(--gold-foreground)' }}
+          >
+            QATARI CONGLOMERATE · 1993
+          </span>
+          <p className="mt-2.5 text-[15px] font-semibold leading-tight">
+            A legacy of <span style={{ color: 'var(--gold)' }}>excellence</span>, across Qatar.
+          </p>
+          <div className="mt-3 flex gap-1.5">
+            <span
+              className="rounded-[var(--radius)] px-2.5 py-1 text-[9px] font-semibold"
+              style={{ background: 'var(--gold)', color: 'var(--gold-foreground)' }}
+            >
+              Explore
+            </span>
+            <span
+              className="rounded-[var(--radius)] border px-2.5 py-1 text-[9px] font-medium"
+              style={{ borderColor: 'var(--primary-foreground)', opacity: 0.85 }}
+            >
+              Profile
+            </span>
+          </div>
+        </Region>
+
+        {/* Stats band */}
+        <Region
+          tokens={['background', 'foreground', 'mutedForeground', 'border']}
+          primary="background"
+          active={A}
+          onHover={H}
+          pill
+          className="grid grid-cols-3 px-2 py-3"
+          style={{ background: 'var(--background)', borderTop: '1px solid var(--border)' }}
+        >
+          {[
+            ['1993', 'Established'],
+            ['6', 'Verticals'],
+            ['26+', 'Markets'],
+          ].map(([value, label], i) => (
+            <div key={label} className={cn('px-1 text-center', i > 0 && 'border-l')} style={{ borderColor: 'var(--border)' }}>
+              <p className="text-[15px] font-bold leading-none" style={{ color: 'var(--foreground)' }}>
+                {value}
+              </p>
+              <p className="mt-1 text-[7px] uppercase tracking-wider" style={{ color: 'var(--muted-foreground)' }}>
+                {label}
+              </p>
+            </div>
+          ))}
+        </Region>
+
+        {/* Subsidiary card */}
+        <div className="px-4 pb-3 pt-3" style={{ background: 'var(--background)' }}>
+          <Region
+            tokens={['card', 'cardForeground', 'mutedForeground', 'border', 'gold']}
+            primary="card"
+            active={A}
+            onHover={H}
+            pill
+            rounded="rounded-[var(--radius)]"
+            className="border p-3"
+            style={{ background: 'var(--card)', borderColor: 'var(--border)', borderRadius: 'var(--radius)' }}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] font-semibold" style={{ color: 'var(--card-foreground)' }}>
+                Flora Technology
+              </span>
+              <span
+                className="rounded-full px-1.5 py-0.5 text-[7px] font-semibold"
+                style={{ background: 'var(--gold)', color: 'var(--gold-foreground)' }}
+              >
+                Tech
+              </span>
+            </div>
+            <p className="mt-1 text-[8px] leading-relaxed" style={{ color: 'var(--muted-foreground)' }}>
+              Enterprise IT and smart infrastructure across the region.
+            </p>
+          </Region>
+        </div>
+
+        {/* Buttons & states */}
+        <div className="space-y-2 px-4 pb-4" style={{ background: 'var(--background)' }}>
+          <p className="text-[7px] font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--muted-foreground)' }}>
+            Buttons & states
+          </p>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Region tokens={['primary', 'primaryForeground']} primary="primary" active={A} onHover={H} rounded="rounded-[var(--radius)]">
+              <span className="block rounded-[var(--radius)] px-2 py-1 text-[8px] font-semibold" style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}>
+                Primary
+              </span>
+            </Region>
+            <Region tokens={['secondary', 'secondaryForeground']} primary="secondary" active={A} onHover={H} rounded="rounded-[var(--radius)]">
+              <span className="block rounded-[var(--radius)] px-2 py-1 text-[8px] font-medium" style={{ background: 'var(--secondary)', color: 'var(--secondary-foreground)' }}>
+                Secondary
+              </span>
+            </Region>
+            <Region tokens={['accent', 'accentForeground']} primary="accent" active={A} onHover={H} rounded="rounded-[var(--radius)]">
+              <span className="block rounded-[var(--radius)] px-2 py-1 text-[8px] font-medium" style={{ background: 'var(--accent)', color: 'var(--accent-foreground)' }}>
+                Accent
+              </span>
+            </Region>
+            <Region tokens={['muted', 'mutedForeground']} primary="muted" active={A} onHover={H} rounded="rounded-[var(--radius)]">
+              <span className="block rounded-[var(--radius)] px-2 py-1 text-[8px] font-medium" style={{ background: 'var(--muted)', color: 'var(--muted-foreground)' }}>
+                Muted
+              </span>
+            </Region>
+            <Region tokens={['goldSoft']} primary="goldSoft" active={A} onHover={H} rounded="rounded-full">
+              <span
+                className="block rounded-full border px-2 py-1 text-[8px] font-medium"
+                style={{ borderColor: 'var(--gold-soft)', background: 'color-mix(in srgb, var(--gold-soft) 35%, transparent)', color: 'var(--foreground)' }}
+              >
+                Soft gold
+              </span>
+            </Region>
+            <Region tokens={['destructive']} primary="destructive" active={A} onHover={H} rounded="rounded-full">
+              <span
+                className="block rounded-full px-2 py-1 text-[8px] font-semibold"
+                style={{ background: 'color-mix(in srgb, var(--destructive) 14%, transparent)', color: 'var(--destructive)' }}
+              >
+                Error
+              </span>
+            </Region>
+          </div>
+          <Region tokens={['input', 'ring']} primary="input" active={A} onHover={H} rounded="rounded-[var(--radius)]">
+            <div
+              className="flex items-center justify-between rounded-[var(--radius)] border px-2 py-1.5 text-[8px]"
+              style={{
+                borderColor: 'var(--input)',
+                background: 'var(--card)',
+                color: 'var(--muted-foreground)',
+                boxShadow: '0 0 0 2.5px color-mix(in srgb, var(--ring) 40%, transparent)',
+              }}
+            >
+              <span>name@flora.qa</span>
+              <span className="text-[7px]" style={{ color: 'var(--foreground)' }}>
+                Focused field
+              </span>
+            </div>
+          </Region>
+        </div>
+
+        {/* Footer */}
+        <Region
+          tokens={['maroonDeep', 'primaryForeground', 'gold']}
+          primary="maroonDeep"
+          active={A}
+          onHover={H}
+          pill
+          className="px-4 py-3"
+          style={{ background: 'var(--maroon-deep)' }}
+        >
+          <div className="flex items-center gap-2">
+            <span className="size-1.5 rounded-full" style={{ background: 'var(--gold)' }} />
+            <span className="text-[8px] font-semibold" style={{ color: 'var(--primary-foreground)' }}>
+              Flora Group W.L.L.
+            </span>
+          </div>
+          <p className="mt-1 text-[7px] opacity-65" style={{ color: 'var(--primary-foreground)' }}>
+            © 2026 · All rights reserved
+          </p>
+        </Region>
       </div>
     </div>
   )
@@ -619,7 +869,7 @@ function SubsidiariesPreview({ payload }: { payload: UiConfigPayload }) {
 // ─── Preview hint copy ────────────────────────────────────────────────────────
 
 const HINTS: Record<SectionId, string> = {
-  appearance: 'Uses the same CSS-variable mapping as the public site.',
+  appearance: 'Live mock of the public site — hover any colour to see where it lands.',
   content: 'Reflects the active page tab and locale.',
   media: 'Site logo, hero, favicon, and subsidiary cover photos.',
   branding: 'Browser tab and social share card preview.',
@@ -637,16 +887,22 @@ export function SectionPreview({
   contentPage,
   contentLocale,
   emailLocale,
+  activeToken,
+  onHoverToken,
 }: {
   active: SectionId
   payload: UiConfigPayload
   contentPage: string
   contentLocale: Locale
   emailLocale?: Locale
+  activeToken?: string | null
+  onHoverToken?: TokenHover
 }) {
   return (
     <aside>
-      {active === 'appearance' && <AppearancePreview payload={payload} />}
+      {active === 'appearance' && (
+        <AppearancePreview payload={payload} activeToken={activeToken} onHoverToken={onHoverToken} />
+      )}
       {active === 'content' && <ContentPreview payload={payload} activePage={contentPage} locale={contentLocale} />}
       {active === 'media' && <MediaPreview payload={payload} />}
       {active === 'branding' && <BrandingPreview payload={payload} />}

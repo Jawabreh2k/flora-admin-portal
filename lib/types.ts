@@ -597,6 +597,13 @@ export type UiConfigResponse = {
   updatedBy: string | null
 }
 
+/** One entry in the config version history (for the rollback UI). */
+export type RevisionSummary = {
+  revision: number
+  savedAtUtc: string
+  savedBy: string | null
+}
+
 export type AuthResponse = {
   accessToken: string
   tokenType: string
