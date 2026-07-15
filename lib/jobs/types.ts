@@ -32,6 +32,7 @@ export interface PaginatedResponse<T> {
 export interface JobListItem {
   id: string
   title: string
+  titleAr: string | null
   department: string
   locationType: LocationType
   locationText: string
@@ -45,13 +46,17 @@ export interface JobListItem {
 export interface JobDetail {
   id: string
   title: string
+  titleAr: string | null
   department: string
   locationType: LocationType
   locationText: string
   jobType: JobType
   description: string
+  descriptionAr: string | null
   requirements: string[]
+  requirementsAr: string[]
   responsibilities: string[]
+  responsibilitiesAr: string[]
   salaryRange: string | null
   status: JobStatus
   closingDate: string | null
@@ -63,6 +68,7 @@ export interface JobDetail {
 export interface AdminJobListItem {
   id: string
   title: string
+  titleAr: string | null
   department: string
   status: JobStatus
   locationType: LocationType
@@ -85,16 +91,27 @@ export interface Application {
   appliedAt: string
 }
 
+export interface UpsertCompanyInput {
+  name: string
+  logoUrl?: string | null
+  website?: string | null
+  description?: string | null
+}
+
 export interface UpsertJobInput {
   companyId: string
   title: string
+  titleAr?: string | null
   department: string
   locationType: LocationType
   locationText: string
   jobType: JobType
   description: string
+  descriptionAr?: string | null
   requirements: string[]
+  requirementsAr: string[]
   responsibilities: string[]
+  responsibilitiesAr: string[]
   salaryRange?: string | null
   status: JobStatus
   closingDate?: string | null

@@ -30,13 +30,17 @@ function toFormValues(job?: JobDetail, defaultCompanyId?: string): UpsertJobForm
     return {
       companyId: job.company.id,
       title: job.title,
+      titleAr: job.titleAr ?? '',
       department: job.department,
       locationType: job.locationType,
       locationText: job.locationText,
       jobType: job.jobType,
       description: job.description,
+      descriptionAr: job.descriptionAr ?? '',
       requirements: job.requirements.length ? job.requirements : [''],
+      requirementsAr: job.requirementsAr.length ? job.requirementsAr : [''],
       responsibilities: job.responsibilities.length ? job.responsibilities : [''],
+      responsibilitiesAr: job.responsibilitiesAr.length ? job.responsibilitiesAr : [''],
       salaryRange: job.salaryRange,
       status: job.status,
       closingDate: job.closingDate ? job.closingDate.slice(0, 16) : null,
@@ -46,13 +50,17 @@ function toFormValues(job?: JobDetail, defaultCompanyId?: string): UpsertJobForm
   return {
     companyId: defaultCompanyId ?? '',
     title: '',
+    titleAr: '',
     department: '',
     locationType: 'HYBRID',
     locationText: '',
     jobType: 'FULL_TIME',
     description: '',
+    descriptionAr: '',
     requirements: [''],
+    requirementsAr: [''],
     responsibilities: [''],
+    responsibilitiesAr: [''],
     salaryRange: '',
     status: 'DRAFT',
     closingDate: null,
@@ -61,20 +69,26 @@ function toFormValues(job?: JobDetail, defaultCompanyId?: string): UpsertJobForm
 
 function DynamicList({
   label,
+  itemLabel,
   description,
   items,
   onAdd,
   onRemove,
   register,
   fieldName,
+  dir,
 }: {
   label: string
+  /** Singular noun for the "Add ___" button — kept separate from `label` since
+   *  the card title isn't always a plain plural (e.g. "Requirements (Arabic)"). */
+  itemLabel: string
   description: string
   items: string[]
   onAdd: () => void
   onRemove: (index: number) => void
   register: ReturnType<typeof useForm<UpsertJobFormValues>>['register']
-  fieldName: 'requirements' | 'responsibilities'
+  fieldName: 'requirements' | 'requirementsAr' | 'responsibilities' | 'responsibilitiesAr'
+  dir?: 'rtl'
 }) {
   return (
     <Card>
@@ -85,7 +99,7 @@ function DynamicList({
       <CardContent className="space-y-3">
         {items.map((_, index) => (
           <div key={`${fieldName}-${index}`} className="flex gap-2">
-            <Input {...register(`${fieldName}.${index}` as const)} />
+            <Input dir={dir} {...register(`${fieldName}.${index}` as const)} />
             <Button
               type="button"
               variant="outline"
@@ -100,7 +114,7 @@ function DynamicList({
         ))}
         <Button type="button" variant="outline" size="sm" onClick={onAdd}>
           <Plus className="size-4" />
-          Add {label.toLowerCase().slice(0, -1)}
+          Add {itemLabel}
         </Button>
       </CardContent>
     </Card>
@@ -129,7 +143,9 @@ export function JobForm({
   })
 
   const requirements = form.watch('requirements')
+  const requirementsAr = form.watch('requirementsAr')
   const responsibilities = form.watch('responsibilities')
+  const responsibilitiesAr = form.watch('responsibilitiesAr')
 
   useEffect(() => {
     if (companiesQuery.data?.[0] && !form.getValues('companyId')) {
@@ -144,8 +160,12 @@ export function JobForm({
   const handleSubmit = form.handleSubmit(async (values) => {
     const payload = {
       ...values,
+      titleAr: values.titleAr?.trim() || null,
+      descriptionAr: values.descriptionAr?.trim() || null,
       requirements: values.requirements.filter((item) => item.trim()),
+      requirementsAr: values.requirementsAr.filter((item) => item.trim()),
       responsibilities: values.responsibilities.filter((item) => item.trim()),
+      responsibilitiesAr: values.responsibilitiesAr.filter((item) => item.trim()),
       salaryRange: values.salaryRange?.trim() || null,
       closingDate: values.closingDate ? new Date(values.closingDate).toISOString() : null,
     }
@@ -201,6 +221,19 @@ export function JobForm({
             <Input id="title" placeholder="e.g. Senior Software Engineer" {...form.register('title')} />
             {form.formState.errors.title && (
               <FormError>{form.formState.errors.title.message}</FormError>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="titleAr">Job title (Arabic) — optional</Label>
+            <Input
+              id="titleAr"
+              dir="rtl"
+              placeholder="مثال: مهندس برمجيات أول"
+              {...form.register('titleAr')}
+            />
+            {form.formState.errors.titleAr && (
+              <FormError>{form.formState.errors.titleAr.message}</FormError>
             )}
           </div>
 
@@ -272,11 +305,29 @@ export function JobForm({
               <FormError>{form.formState.errors.description.message}</FormError>
             )}
           </div>
+
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="descriptionAr">Description (Arabic) — optional</Label>
+            <Textarea
+              id="descriptionAr"
+              dir="rtl"
+              rows={8}
+              placeholder="اترك هذا الحقل فارغاً لعرض الوصف الإنجليزي بدلاً منه."
+              {...form.register('descriptionAr')}
+            />
+            {form.formState.errors.descriptionAr && (
+              <FormError>{form.formState.errors.descriptionAr.message}</FormError>
+            )}
+            <p className="text-xs text-subtle">
+              Leave blank to show the English description on the Arabic site instead.
+            </p>
+          </div>
         </CardContent>
       </Card>
 
       <DynamicList
         label="Requirements"
+        itemLabel="requirement"
         description="Add bullet points for candidate requirements."
         items={requirements}
         onAdd={() => form.setValue('requirements', [...requirements, ''])}
@@ -291,7 +342,25 @@ export function JobForm({
       />
 
       <DynamicList
+        label="Requirements (Arabic) — optional"
+        itemLabel="requirement"
+        description="Leave empty to show the English requirements on the Arabic site instead."
+        items={requirementsAr}
+        onAdd={() => form.setValue('requirementsAr', [...requirementsAr, ''])}
+        onRemove={(index) =>
+          form.setValue(
+            'requirementsAr',
+            requirementsAr.filter((_, i) => i !== index),
+          )
+        }
+        register={form.register}
+        fieldName="requirementsAr"
+        dir="rtl"
+      />
+
+      <DynamicList
         label="Responsibilities"
+        itemLabel="responsibility"
         description="Outline day-to-day responsibilities for the role."
         items={responsibilities}
         onAdd={() => form.setValue('responsibilities', [...responsibilities, ''])}
@@ -303,6 +372,23 @@ export function JobForm({
         }
         register={form.register}
         fieldName="responsibilities"
+      />
+
+      <DynamicList
+        label="Responsibilities (Arabic) — optional"
+        itemLabel="responsibility"
+        description="Leave empty to show the English responsibilities on the Arabic site instead."
+        items={responsibilitiesAr}
+        onAdd={() => form.setValue('responsibilitiesAr', [...responsibilitiesAr, ''])}
+        onRemove={(index) =>
+          form.setValue(
+            'responsibilitiesAr',
+            responsibilitiesAr.filter((_, i) => i !== index),
+          )
+        }
+        register={form.register}
+        fieldName="responsibilitiesAr"
+        dir="rtl"
       />
 
       {/* Sticky action bar */}
