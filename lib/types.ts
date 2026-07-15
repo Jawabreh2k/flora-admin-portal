@@ -259,6 +259,8 @@ export type ManagedSubsidiary = {
   website: string
   hasProfile: boolean
   contact: SubsidiaryContact
+  /** Hides the subsidiary from the public site without deleting it. Missing/undefined means visible. */
+  enabled?: boolean
 }
 
 export type Localized<T> = Record<Locale, T>

@@ -113,14 +113,19 @@ export function Toggle({
   checked,
   onChange,
   label,
+  hint,
 }: {
   checked: boolean
   onChange: () => void
   label: string
+  hint?: string
 }) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface px-4 py-3 transition-colors hover:bg-surface-sunken/50">
-      <span className="min-w-0 flex-1 text-sm text-foreground">{label}</span>
+      <span className="min-w-0 flex-1 text-sm text-foreground">
+        {label}
+        {hint && <span className="mt-1 block text-xs font-normal text-subtle">{hint}</span>}
+      </span>
       <div className="flex shrink-0 items-center">
         <Switch checked={checked} onChange={onChange} aria-label={label || undefined} />
       </div>

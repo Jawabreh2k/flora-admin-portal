@@ -34,6 +34,7 @@ function createEmptySubsidiary(existingSlugs: string[]): ManagedSubsidiary {
     website: '',
     hasProfile: false,
     contact: { address: { en: '', ar: '' }, phone: undefined, fax: undefined, email: undefined },
+    enabled: true,
   }
 }
 
@@ -233,7 +234,14 @@ export function SubsidiariesSection({
                   className="w-full flex items-center justify-between px-4 py-3 hover:bg-surface transition-colors"
                 >
                   <div className="text-left">
-                    <p className="font-medium text-foreground">{subsidiary.name[locale]}</p>
+                    <p className="flex items-center gap-2 font-medium text-foreground">
+                      {subsidiary.name[locale]}
+                      {subsidiary.enabled === false && (
+                        <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-normal text-muted">
+                          Hidden
+                        </span>
+                      )}
+                    </p>
                     <p className="text-xs text-muted">{subsidiary.slug}</p>
                   </div>
                   <ChevronDown
@@ -575,10 +583,24 @@ export function SubsidiariesSection({
                         }
                         label="Has detailed profile page"
                       />
+                      <Toggle
+                        checked={subsidiary.enabled !== false}
+                        onChange={() =>
+                          updateSubsidiary(subsidiary.slug, {
+                            enabled: subsidiary.enabled === false ? true : false,
+                          })
+                        }
+                        label="Visible on public site"
+                        hint="Hides it from the homepage, footer, and its profile page — the direct URL 404s too. Content is kept, so you can turn it back on any time instead of deleting it."
+                      />
                     </div>
 
                     {/* Danger zone */}
                     <div className="border-t border-border pt-4">
+                      <p className="mb-2 text-xs text-muted">
+                        Permanently removes this subsidiary and its content. If you just want to hide
+                        it temporarily, use "Visible on public site" above instead.
+                      </p>
                       <Button
                         variant="destructive"
                         size="sm"
