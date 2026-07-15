@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query'
 import {
   BarChart3,
   Briefcase,
+  Building2,
   ExternalLink,
   Inbox,
   LayoutGrid,
@@ -41,6 +42,13 @@ const MAIN_NAV = [
     description: 'Roles & applications',
     icon: Briefcase,
     match: (path: string) => path.startsWith('/dashboard/jobs'),
+  },
+  {
+    href: '/dashboard/companies',
+    label: 'Companies',
+    description: 'Groups for job postings',
+    icon: Building2,
+    match: (path: string) => path.startsWith('/dashboard/companies'),
   },
   {
     href: '/dashboard/inquiries',
