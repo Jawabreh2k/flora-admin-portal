@@ -5,11 +5,13 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
+  BarChart3,
   Briefcase,
   ExternalLink,
   Inbox,
   LayoutGrid,
   LogOut,
+  MailPlus,
   Menu,
   X,
 } from 'lucide-react'
@@ -19,6 +21,13 @@ import { Button } from '@/components/ui/button'
 const PUBLIC_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
 const MAIN_NAV = [
+  {
+    href: '/dashboard/overview',
+    label: 'Overview',
+    description: 'Site activity at a glance',
+    icon: BarChart3,
+    match: (path: string) => path.startsWith('/dashboard/overview'),
+  },
   {
     href: '/dashboard',
     label: 'Site Config',
@@ -39,6 +48,13 @@ const MAIN_NAV = [
     description: 'Contact form messages',
     icon: Inbox,
     match: (path: string) => path.startsWith('/dashboard/inquiries'),
+  },
+  {
+    href: '/dashboard/subscribers',
+    label: 'Subscribers',
+    description: 'Newsletter signups',
+    icon: MailPlus,
+    match: (path: string) => path.startsWith('/dashboard/subscribers'),
   },
 ] as const
 
