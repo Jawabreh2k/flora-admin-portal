@@ -35,6 +35,8 @@ function createEmptySubsidiary(existingSlugs: string[]): ManagedSubsidiary {
     hasProfile: false,
     contact: { address: { en: '', ar: '' }, phone: undefined, fax: undefined, email: undefined },
     enabled: true,
+    clients: { en: [], ar: [] },
+    websiteLabel: { en: '', ar: '' },
   }
 }
 
@@ -105,11 +107,14 @@ export function SubsidiariesSection({
     if (!subsidiary) return
 
     const fieldValue = subsidiary[field]
-    if (typeof fieldValue === 'object' && fieldValue !== null && !Array.isArray(fieldValue)) {
-      updateSubsidiary(slug, {
-        [field]: { ...fieldValue, [locale]: value },
-      } as any)
-    }
+    const isLocalizedObject =
+      typeof fieldValue === 'object' && fieldValue !== null && !Array.isArray(fieldValue)
+    // Nullable localized fields (e.g. websiteLabel) may be undefined/null until
+    // first set — fall back to an empty pair rather than silently no-oping.
+    const base = isLocalizedObject ? fieldValue : { en: '', ar: '' }
+    updateSubsidiary(slug, {
+      [field]: { ...base, [locale]: value },
+    } as any)
   }
 
   const addHighlight = (slug: string) => {
@@ -186,6 +191,40 @@ export function SubsidiariesSection({
     newMetrics[locale] = [...newMetrics[locale]]
     newMetrics[locale][index] = { ...newMetrics[locale][index], [field]: value }
     updateSubsidiary(slug, { metrics: newMetrics })
+  }
+
+  const addClient = (slug: string) => {
+    const subsidiary = subsidiaries.find((s) => s.slug === slug)
+    if (!subsidiary) return
+
+    const current = subsidiary.clients ?? { en: [], ar: [] }
+    const newClients = {
+      en: [...current.en, ''],
+      ar: [...current.ar, ''],
+    }
+    updateSubsidiary(slug, { clients: newClients })
+  }
+
+  const removeClient = (slug: string, index: number) => {
+    const subsidiary = subsidiaries.find((s) => s.slug === slug)
+    if (!subsidiary?.clients) return
+
+    const newClients = {
+      en: subsidiary.clients.en.filter((_, i) => i !== index),
+      ar: subsidiary.clients.ar.filter((_, i) => i !== index),
+    }
+    updateSubsidiary(slug, { clients: newClients })
+  }
+
+  const updateClient = (slug: string, index: number, locale: Locale, value: string) => {
+    const subsidiary = subsidiaries.find((s) => s.slug === slug)
+    if (!subsidiary) return
+
+    const current = subsidiary.clients ?? { en: [], ar: [] }
+    const newClients = { ...current }
+    newClients[locale] = [...newClients[locale]]
+    newClients[locale][index] = value
+    updateSubsidiary(slug, { clients: newClients })
   }
 
   const uploadSubsidiaryImage = async (slug: string, field: 'image' | 'logo', file: File) => {
@@ -407,6 +446,43 @@ export function SubsidiariesSection({
                       </div>
                     </div>
 
+                    {/* Trusted-by clients */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-sm font-semibold text-foreground">Trusted by (clients)</h4>
+                          <p className="text-xs text-muted">
+                            Shown as a "Trusted By" strip on the profile page. Leave empty to hide it.
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => addClient(subsidiary.slug)}
+                        >
+                          <Plus className="size-3.5" />
+                          Add
+                        </Button>
+                      </div>
+                      <div className="space-y-2">
+                        {(subsidiary.clients?.[locale] ?? []).map((client, idx) => (
+                          <div key={idx} className="relative">
+                            <TextInput
+                              value={client}
+                              onChange={(v) => updateClient(subsidiary.slug, idx, locale, v)}
+                              placeholder="e.g. The Ritz-Carlton, Doha"
+                            />
+                            <button
+                              onClick={() => removeClient(subsidiary.slug, idx)}
+                              className="absolute right-2 top-2 p-1 hover:text-destructive transition-colors"
+                            >
+                              <Trash2 className="size-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
                     {/* Images & Colors */}
                     <div className="space-y-3">
                       <div className="flex items-center justify-between gap-3">
@@ -574,6 +650,16 @@ export function SubsidiariesSection({
                           mono
                           value={subsidiary.website}
                           onChange={(v) => updateSubsidiary(subsidiary.slug, { website: v })}
+                        />
+                      </Field>
+                      <Field
+                        label="Website button label"
+                        hint='Optional. Defaults to "Visit Website" — override for e.g. "Shop the Online Store".'
+                      >
+                        <TextInput
+                          value={subsidiary.websiteLabel?.[locale] ?? ''}
+                          onChange={(v) => updateLocalized(subsidiary.slug, 'websiteLabel', locale, v)}
+                          placeholder="Visit Website"
                         />
                       </Field>
                       <Toggle

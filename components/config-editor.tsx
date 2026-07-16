@@ -46,6 +46,8 @@ export function ConfigEditor({ initial }: { initial: UiConfigResponse }) {
   const [payload, setPayload] = useState<UiConfigPayload>(initial.payload)
   const [save, setSave] = useState<SaveState>({ status: 'idle' })
   const [dirty, setDirty] = useState(false)
+  // Which palette the Appearance editor (and its live preview) currently targets.
+  const [themeVariant, setThemeVariant] = useState<'light' | 'dark'>('light')
   const [contentLocale, setContentLocale] = useState<Locale>('en')
   const [emailLocale, setEmailLocale] = useState<Locale>('en')
   const [contentPage, setContentPage] = useState<string>(CONTENT_SCHEMA[0].page)
@@ -67,11 +69,19 @@ export function ConfigEditor({ initial }: { initial: UiConfigResponse }) {
   }
 
   const setTheme = (key: keyof Theme, value: string) => {
-    setPayload((p) => ({ ...p, theme: { ...p.theme, [key]: value } }))
+    const field = themeVariant === 'dark' ? 'themeDark' : 'theme'
+    setPayload((p) => ({ ...p, [field]: { ...p[field], [key]: value } }))
     touched()
   }
   const applyTheme = (patch: Partial<Theme>) => {
-    setPayload((p) => ({ ...p, theme: { ...p.theme, ...patch } }))
+    const field = themeVariant === 'dark' ? 'themeDark' : 'theme'
+    setPayload((p) => ({ ...p, [field]: { ...p[field], ...patch } }))
+    touched()
+  }
+  // Shape & typography (radius/fonts) are shared across both palettes — always
+  // targets the light theme object regardless of which variant is selected above.
+  const setSharedTheme = (key: keyof Theme, value: string) => {
+    setPayload((p) => ({ ...p, theme: { ...p.theme, [key]: value } }))
     touched()
   }
   const setBranding = (key: keyof Branding, value: string) => {
@@ -266,8 +276,11 @@ export function ConfigEditor({ initial }: { initial: UiConfigResponse }) {
                 payload={payload}
                 setTheme={setTheme}
                 applyTheme={applyTheme}
+                setSharedTheme={setSharedTheme}
                 activeToken={hoverToken}
                 onHoverToken={setHoverToken}
+                themeVariant={themeVariant}
+                onThemeVariantChange={setThemeVariant}
               />
             )}
             {active === 'content' && (
@@ -328,6 +341,7 @@ export function ConfigEditor({ initial }: { initial: UiConfigResponse }) {
                   emailLocale={emailLocale}
                   activeToken={hoverToken}
                   onHoverToken={(k) => setHoverToken(k as keyof Theme | null)}
+                  themeVariant={themeVariant}
                 />
               </div>
             </div>

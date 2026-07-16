@@ -132,16 +132,19 @@ function AppearancePreview({
   payload,
   activeToken,
   onHoverToken,
+  themeVariant,
 }: {
   payload: UiConfigPayload
   activeToken?: string | null
   onHoverToken?: TokenHover
+  themeVariant?: 'light' | 'dark'
 }) {
   const A = activeToken ?? null
   const H: TokenHover = onHoverToken ?? (() => {})
+  const theme = themeVariant === 'dark' ? payload.themeDark : payload.theme
 
   return (
-    <div style={themeVars(payload.theme)}>
+    <div style={themeVars(theme)}>
       <div className="mb-2.5 flex items-center gap-1.5 text-[10px] font-medium text-neutral-400">
         <MousePointerClick className="size-3" />
         Hover a colour to spotlight it
@@ -889,6 +892,7 @@ export function SectionPreview({
   emailLocale,
   activeToken,
   onHoverToken,
+  themeVariant,
 }: {
   active: SectionId
   payload: UiConfigPayload
@@ -897,11 +901,17 @@ export function SectionPreview({
   emailLocale?: Locale
   activeToken?: string | null
   onHoverToken?: TokenHover
+  themeVariant?: 'light' | 'dark'
 }) {
   return (
     <aside>
       {active === 'appearance' && (
-        <AppearancePreview payload={payload} activeToken={activeToken} onHoverToken={onHoverToken} />
+        <AppearancePreview
+          payload={payload}
+          activeToken={activeToken}
+          onHoverToken={onHoverToken}
+          themeVariant={themeVariant}
+        />
       )}
       {active === 'content' && <ContentPreview payload={payload} activePage={contentPage} locale={contentLocale} />}
       {active === 'media' && <MediaPreview payload={payload} />}

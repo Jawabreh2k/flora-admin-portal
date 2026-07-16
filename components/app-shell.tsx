@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { ThemeToggle, ThemeToggleCompact } from '@/components/theme-toggle'
 
 const PUBLIC_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
@@ -178,6 +179,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       </nav>
 
       <div className="space-y-1 border-t border-border p-3">
+        <ThemeToggle />
         <a
           href={PUBLIC_SITE_URL}
           target="_blank"
@@ -247,6 +249,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Menu className="size-5" />
           </Button>
           <span className="text-sm font-semibold text-foreground">Flora CMS</span>
+          <ThemeToggleCompact className="ml-auto" />
         </header>
 
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">

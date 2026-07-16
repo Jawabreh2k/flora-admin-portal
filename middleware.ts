@@ -20,7 +20,7 @@ export function middleware(request: NextRequest) {
 
   if (pathname === '/login' && hasSession) {
     const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
+    url.pathname = '/dashboard/overview'
     return NextResponse.redirect(url)
   }
 

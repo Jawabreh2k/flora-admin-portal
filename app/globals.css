@@ -1,5 +1,7 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:is(.dark *));
+
 @theme {
   /* Brand */
   --color-brand: #4a0e17;
@@ -52,6 +54,45 @@
   color-scheme: light;
 }
 
+html.dark {
+  color-scheme: dark;
+}
+
+/* Dark theme — warm charcoal-maroon surfaces instead of generic grey, brand
+   colour brightened just enough to stay legible against dark panels. */
+.dark body {
+  --color-brand: #b8455f;
+  --color-brand-deep: #7a2436;
+  --color-brand-light: #e8a8b8;
+  --color-brand-muted: #3a1620;
+  --color-gold: #d4b896;
+  --color-gold-soft: #4a3826;
+
+  --color-surface: #2a2023;
+  --color-surface-raised: #332529;
+  --color-surface-sunken: #1c1416;
+  --color-surface-overlay: #332529;
+  --color-border: #4a3a3e;
+  --color-border-strong: #5f4a50;
+
+  --color-foreground: #f2ece9;
+  --color-muted: #b8a8a2;
+  --color-subtle: #8a7873;
+
+  --color-success: #4ade80;
+  --color-success-bg: #14291c;
+  --color-warning: #fbbf24;
+  --color-warning-bg: #2e2410;
+  --color-danger: #f87171;
+  --color-danger-bg: #2e1616;
+  --color-info: #60a5fa;
+  --color-info-bg: #16202e;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.2);
+  --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 12px 32px -4px rgb(0 0 0 / 0.4);
+}
+
 html,
 body {
   height: 100%;
@@ -80,4 +121,25 @@ body {
 .scrollbar-thin::-webkit-scrollbar-thumb {
   background: var(--color-border);
   border-radius: 3px;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up {
+    animation-duration: 0.001ms !important;
+  }
 }

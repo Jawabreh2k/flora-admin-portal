@@ -261,6 +261,10 @@ export type ManagedSubsidiary = {
   contact: SubsidiaryContact
   /** Hides the subsidiary from the public site without deleting it. Missing/undefined means visible. */
   enabled?: boolean
+  /** Named clients/partners shown as a "Trusted By" strip on the profile page. */
+  clients?: Localized<string[]>
+  /** Override for the "Visit Website" button label (e.g. "Shop the Online Store"). */
+  websiteLabel?: Localized<string>
 }
 
 export type Localized<T> = Record<Locale, T>
@@ -276,6 +280,7 @@ export const ICON_PRESETS = [
 
 export type UiConfigPayload = {
   theme: Theme
+  themeDark: Theme
   branding: Branding
   sections: Sections
   images: Images

@@ -3,10 +3,10 @@ import type { LucideIcon } from 'lucide-react'
 
 const variants = {
   default: 'border-border bg-surface text-foreground',
-  success: 'border-emerald-200 bg-success-bg text-success',
-  warning: 'border-amber-200 bg-warning-bg text-warning',
-  danger: 'border-red-200 bg-danger-bg text-danger',
-  info: 'border-blue-200 bg-info-bg text-info',
+  success: 'border-emerald-200 dark:border-emerald-900/40 bg-success-bg text-success',
+  warning: 'border-amber-200 dark:border-amber-900/40 bg-warning-bg text-warning',
+  danger: 'border-red-200 dark:border-red-900/40 bg-danger-bg text-danger',
+  info: 'border-blue-200 dark:border-blue-900/40 bg-info-bg text-info',
 } as const
 
 export function Alert({
