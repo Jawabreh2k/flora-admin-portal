@@ -1,7 +1,10 @@
-# Flora CMS — Admin Portal (Step 3)
+# Flora CMS — Admin Portal
+
+![Overview](docs/screenshots/overview.png)
+![Theme editor with live preview](docs/screenshots/theme.png)
 
 A standalone Next.js 16 app for managing the public Flora Group website's theme,
-branding, and homepage layout. Part 2 of the 3-part ecosystem.
+branding, and homepage layout. Part of a 3-part ecosystem: [flora-backend](https://github.com/Jawabreh2k/flora-backend) (.NET 9 API), [flora-group-website](https://github.com/Jawabreh2k/flora-group-website) (public site) and this portal.
 
 ## Architecture — Backend-for-Frontend (BFF)
 
@@ -25,6 +28,11 @@ Browser ──> Admin Portal route handlers ──(Bearer JWT)──> .NET CMS A
 
 ## Features
 
+- 📊 Overview dashboard with real business stats
+- 💼 Jobs: create/edit, with Arabic fields
+- 🏢 Companies and subsidiaries: create, edit, hide from the public site
+- 📥 Contact inquiries and newsletter subscribers (CSV export)
+- 🌗 Dark-mode controls
 - 🔐 JWT login (httpOnly cookie session)
 - 🎨 Grouped colour-token editor (swatch + free-text, supports hex/oklch/rgb)
 - 🔤 Radius + font controls
