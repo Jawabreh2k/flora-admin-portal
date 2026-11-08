@@ -1,5 +1,7 @@
 # Flora CMS — Admin Portal
 
+> Personal portfolio project. Not affiliated with or endorsed by Flora Group; the brand name and imagery are used only to make the demo realistic.
+
 ![Overview](docs/screenshots/overview.png)
 ![Theme editor with live preview](docs/screenshots/theme.png)
 
@@ -40,19 +42,19 @@ Browser ──> Admin Portal route handlers ──(Bearer JWT)──> .NET CMS A
 - 🖼️ Live preview using the **same CSS-variable mapping** as the public site
 - 💾 Save & publish → writes to SQL Server JSON column + instant site revalidation
 
-## Run
+## Run locally
 
-Requires the .NET API (Step 1) and ideally the public site (Step 2) running.
+**Prerequisites:** Node.js 20+, [pnpm](https://pnpm.io) (`npm i -g pnpm`), the [.NET API](https://github.com/Jawabreh2k/flora-backend) on `http://localhost:5253`, and ideally the [public site](https://github.com/Jawabreh2k/flora-group-website) on port 3000.
 
 ```bash
+cp .env.example .env.local     # copy .env.example .env.local on Windows
 pnpm install
-pnpm dev          # http://localhost:3001
+pnpm dev                       # http://localhost:3001
 ```
 
-Copy `.env.example` → `.env.local` and set values. The `FLORA_REVALIDATE_SECRET`
-must match the public site's secret for instant publishing to work.
+Set `FLORA_REVALIDATE_SECRET` in `.env.local` to **the same value used by the public site** so that saving a change updates the site instantly.
 
-Default dev login (from the API seed): `admin` / `ChangeMe!2026`.
+Sign in with username `admin` and the bootstrap password you set in the API's `appsettings.Local.json`.
 
 ## Ports
 
